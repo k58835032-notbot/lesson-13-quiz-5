@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Hiragana Row Game</title>
+
+<style>
+
+body {
+
+  font-family: "Hiragino Kaku Gothic Pro","Meiryo",sans-serif;
+
+  background:#f7f7f7;
+
+  display:flex;
+
+  justify-content:center;
+
+  padding:40px;
+
+}
+
+.card {
+
+  background:white;
+
+  border-radius:20px;
+
+  padding:30px;
+
+  width:360px;
+
+  box-shadow:0 10px 25px rgba(0,0,0,.1);
+
+  text-align:center;
+
+}
+
+h1 {
+
+  color:#b23b3b;
+
+  margin-bottom:10px;
+
+}
+
+.progress {
+
+  color:#666;
+
+  margin-bottom:20px;
+
+}
+
+.slots {
+
+  display:flex;
+
+  justify-content:center;
+
+  gap:12px;
+
+  margin-bottom:20px;
+
+}
+
+.slot {
+
+  width:60px;
+
+  height:80px;
+
+  border:3px solid #b23b3b;
+
+  border-radius:14px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:center;
+
+  cursor:pointer;
+
+}
+
+.slot.active {
+
+  background:#ffecec;
+
+}
+
+.romaji {
+
+  font-size:14px;
+
+  color:#999;
+
+}
+
+.kana {
+
+  font-size:28px;
+
+}
+
+.choices {
+
+  display:grid;
+
+  grid-template-columns:repeat(5,1fr);
+
+  gap:10px;
+
+  margin-bottom:20px;
+
+}
+
+.choice {
+
+  border:2px solid #b23b3b;
+
+  border-radius:12px;
+
+  padding:10px;
+
+  font-size:22px;
+
+  cursor:pointer;
+
+  background:#fff;
+
+}
+
+.choice:hover {
+
+  background:#ffecec;
+
+}
+
+button {
+
+  padding:12px 24px;
+
+  font-size:18px;
+
+  border-radius:14px;
+
+  border:none;
+
+  background:#ccc;
+
+  color:white;
+
+}
+
+button.enabled {
+
+  background:#b23b3b;
+
+  cursor:pointer;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+  <h1>Hiragana Quiz</h1>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="slots" id="slots"></div>
+
+  <div class="choices" id="choices"></div>
+
+  <button id="nextBtn">Next Row</button>
+
+</div>
+
+<script>
+
+/* ===== DATA ===== */
+
+const rows = [
+  { name:"a-row", items:[
+    {r:"a",k:"あ"},{r:"i",k:"い"},{r:"u",k:"う"},{r:"e",k:"え"},{r:"o",k:"お"}
+  ]},
+
+  { name:"ka-row", items:[
+    {r:"ka",k:"か"},{r:"ki",k:"き"},{r:"ku",k:"く"},{r:"ke",k:"け"},{r:"ko",k:"こ"}
+  ]},
+
+  { name:"ga-row", items:[
+    {r:"ga",k:"が"},{r:"gi",k:"ぎ"},{r:"gu",k:"ぐ"},{r:"ge",k:"げ"},{r:"go",k:"ご"}
+  ]},
+
+  { name:"sa-row", items:[
+    {r:"sa",k:"さ"},{r:"shi",k:"し"},{r:"su",k:"す"},{r:"se",k:"せ"},{r:"so",k:"そ"}
+  ]},
+
+  { name:"za-row", items:[
+    {r:"za",k:"ざ"},{r:"ji",k:"じ"},{r:"zu",k:"ず"},{r:"ze",k:"ぜ"},{r:"zo",k:"ぞ"}
+  ]},
+
+  { name:"ta-row", items:[
+    {r:"ta",k:"た"},{r:"chi",k:"ち"},{r:"tsu",k:"つ"},{r:"te",k:"て"},{r:"to",k:"と"}
+  ]},
+
+  { name:"da-row", items:[
+    {r:"da",k:"だ"},{r:"dzu",k:"づ"},{r:"de",k:"で"},{r:"do",k:"ど"}
+  ]},
+
+  { name:"na-row", items:[
+    {r:"na",k:"な"},{r:"ni",k:"に"},{r:"nu",k:"ぬ"},{r:"ne",k:"ね"},{r:"no",k:"の"}
+  ]},
+
+  { name:"ha-row", items:[
+    {r:"ha",k:"は"},{r:"hi",k:"ひ"},{r:"fu",k:"ふ"},{r:"he",k:"へ"},{r:"ho",k:"ほ"}
+  ]},
+
+  { name:"ba-row", items:[
+    {r:"ba",k:"ば"},{r:"bi",k:"び"},{r:"bu",k:"ぶ"},{r:"be",k:"べ"},{r:"bo",k:"ぼ"}
+  ]},
+
+  { name:"pa-row", items:[
+    {r:"pa",k:"ぱ"},{r:"pi",k:"ぴ"},{r:"pu",k:"ぷ"},{r:"pe",k:"ぺ"},{r:"po",k:"ぽ"}
+  ]},
+
+  { name:"ma-row", items:[
+    {r:"ma",k:"ま"},{r:"mi",k:"み"},{r:"mu",k:"む"},{r:"me",k:"め"},{r:"mo",k:"も"}
+  ]},
+
+  { name:"ya-row", items:[
+    {r:"ya",k:"や"},{r:"yu",k:"ゆ"},{r:"yo",k:"よ"}
+  ]},
+
+  { name:"ra-row", items:[
+    {r:"ra",k:"ら"},{r:"ri",k:"り"},{r:"ru",k:"る"},{r:"re",k:"れ"},{r:"ro",k:"ろ"}
+  ]},
+
+  { name:"wa-row", items:[
+    {r:"wa",k:"わ"},{r:"wo",k:"を"}
+  ]},
+
+  { name:"n", items:[
+    {r:"n",k:"ん"}
+  ]},
+
+  { name:"きゃ-row (yōon)", items:[
+    {r:"kya",k:"きゃ"},{r:"kyu",k:"きゅ"},{r:"kyo",k:"きょ"}
+  ]},
+
+  { name:"ぎゃ-row (yōon)", items:[
+    {r:"gya",k:"ぎゃ"},{r:"gyu",k:"ぎゅ"},{r:"gyo",k:"ぎょ"}
+  ]},
+  { name:"しゃ-row (yōon)", items:[
+  {r:"sha",k:"しゃ"},{r:"shu",k:"しゅ"},{r:"sho",k:"しょ"}
+]},
+
+{ name:"ちゃ-row (yōon)", items:[
+  {r:"cha",k:"ちゃ"},{r:"chu",k:"ちゅ"},{r:"cho",k:"ちょ"}
+]},
+
+{ name:"にゃ-row (yōon)", items:[
+  {r:"nya",k:"にゃ"},{r:"nyu",k:"にゅ"},{r:"nyo",k:"にょ"}
+]},
+
+{ name:"ひゃ-row (yōon)", items:[
+  {r:"hya",k:"ひゃ"},{r:"hyu",k:"ひゅ"},{r:"hyo",k:"ひょ"}
+]},
+
+{ name:"みゃ-row (yōon)", items:[
+  {r:"mya",k:"みゃ"},{r:"myu",k:"みゅ"},{r:"myo",k:"みょ"}
+]},
+
+{ name:"りゃ-row (yōon)", items:[
+  {r:"rya",k:"りゃ"},{r:"ryu",k:"りゅ"},{r:"ryo",k:"りょ"}
+]},
+
+{ name:"びゃ-row (yōon)", items:[
+  {r:"bya",k:"びゃ"},{r:"byu",k:"びゅ"},{r:"byo",k:"びょ"}
+]},
+
+{ name:"ぴゃ-row (yōon)", items:[
+  {r:"pya",k:"ぴゃ"},{r:"pyu",k:"ぴゅ"},{r:"pyo",k:"ぴょ"}
+]},
+
+{ name:"じゃ-row (yōon)", items:[
+  {r:"ja",k:"じゃ"},{r:"ju",k:"じゅ"},{r:"jo",k:"じょ"}
+]}
+
+];
+
+
+    
+
+   
+
+ /* ===== ALL KANA POOL ===== */
+
+const allKana = [
+
+"あ","い","う","え","お",
+
+"か","き","く","け","こ",
+
+"が","ぎ","ぐ","げ","ご",
+
+"さ","し","す","せ","そ",
+
+"ざ","じ","ず","ぜ","ぞ",
+
+"た","ち","つ","て","と",
+
+"だ","ぢ","づ","で","ど",
+
+"な","に","ぬ","ね","の",
+
+"は","ひ","ふ","へ","ほ",
+
+"ば","び","ぶ","べ","ぼ",
+
+"ぱ","ぴ","ぷ","ぺ","ぽ",
+  
+"ま","み","む","め","も",
+
+"や","ゆ","よ",
+  
+"ら","り","る","れ","ろ",
+
+"きゃ","きゅ","きょ",
+  
+"ぎゃ","ぎゅ","ぎょ",
+  
+"しゃ","しゅ","しょ",
+  
+"じゃ","じゅ","じょ",
+  
+"ちゃ","ちゅ","ちょ",
+  
+"りゃ","りゅ","りょ",
+  
+"にゃ","にゅ","にょ",
+  
+"みゃ","みゅ","みょ",
+  
+"ひゃ","ひゅ","ひょ",
+  
+"びゃ","びゅ","びょ",
+  
+"ぴゃ","ぴゅ","ぴょ",
+  
+"わ", "を", "ん"
+
+];
+
+/* ===== GAME STATE ===== */
+
+let rowIndex = 0;
+
+let activeSlot = null;
+let mistakes = new Set();   // stores kana answered incorrectly
+
+/* ===== ELEMENTS ===== */
+
+const slotsDiv = document.getElementById("slots");
+
+const choicesDiv = document.getElementById("choices");
+
+const progress = document.getElementById("progress");
+
+const nextBtn = document.getElementById("nextBtn");
+
+/* ===== FUNCTIONS ===== */
+
+function loadRow() {
+
+  slotsDiv.innerHTML = "";
+
+  choicesDiv.innerHTML = "";
+
+  nextBtn.classList.remove("enabled");
+
+  const row = rows[rowIndex];
+
+  progress.textContent = `${row.name} (${rowIndex+1}/${rows.length})`;
+
+  row.items.forEach((item,i)=>{
+
+    const slot = document.createElement("div");
+
+    slot.className="slot";
+
+    slot.dataset.answer = item.k;
+
+    slot.innerHTML = `<div class="romaji">${item.r}</div><div class="kana"></div>`;
+
+    slot.onclick = ()=>{
+
+      document.querySelectorAll(".slot").forEach(s=>s.classList.remove("active"));
+
+      slot.classList.add("active");
+
+      activeSlot = slot;
+
+      showChoices();
+
+    };
+
+    slotsDiv.appendChild(slot);
+
+  });
+
+}
+
+function showChoices() {
+
+  choicesDiv.innerHTML = "";
+
+  // make a shuffled COPY (do not touch original order)
+
+  const shuffledKana = [...allKana].sort(() => Math.random() - 0.5);
+
+  shuffledKana.forEach(k => {
+
+    const btn = document.createElement("div");
+
+    btn.className = "choice";
+
+    btn.textContent = k;
+
+    btn.onclick = () => selectKana(k);
+
+    choicesDiv.appendChild(btn);
+
+  });
+
+}
+
+
+
+
+
+function selectKana(kana) {
+  if(!activeSlot) return;
+
+  if(kana === activeSlot.dataset.answer) {
+    activeSlot.querySelector(".kana").textContent = kana;
+    activeSlot.classList.remove("active");
+    activeSlot = null;
+    checkComplete();
+  } else {
+    // ❌ wrong answer → track mistake
+    mistakes.add(activeSlot.dataset.answer);
+
+    // small feedback (optional)
+    activeSlot.classList.remove("active");
+    activeSlot = null;
+  }
+}
+
+
+function checkComplete() {
+
+  const done = [...document.querySelectorAll(".slot")]
+
+    .every(s=>s.querySelector(".kana").textContent);
+
+  if(done) {
+
+    nextBtn.classList.add("enabled");
+
+  }
+
+}
+
+nextBtn.onclick = ()=>{
+
+  if(!nextBtn.classList.contains("enabled")) return;
+
+  rowIndex++;
+
+  if(rowIndex < rows.length) loadRow();
+
+  else showResults();
+
+
+};
+
+/* ===== START ===== */
+
+loadRow();
+function showResults() {
+  document.querySelector(".card").innerHTML = `
+    <h1>Finished!</h1>
+    ${
+      mistakes.size === 0
+      ? "<p>🎉 Perfect! No mistakes!</p>"
+      : `<p>You need to work on these characters:</p>
+         <div style="font-size:26px; margin-top:10px;">
+           ${[...mistakes].join(" ・ ")}
+         </div>`
+    }
+  `;
+}
+
+</script>
+
+</body>
+
+</html>
